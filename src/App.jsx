@@ -12,6 +12,7 @@ import TikTokAuth from './pages/login/auth'
 import Dashboard from './pages/dashboard/dashboard';
 import TermsOfService from './pages/legal/termsOfService';
 import PrivacyPolicy from './pages/legal/privacyPolicy';
+import Callback from './components/callback/callback';
 
 function App() {
   const [count, setCount] = useState(0)
@@ -23,6 +24,8 @@ function App() {
       <Route path="/" element={<Dashboard />} />
       <Route path="/terms-of-service" element={<TermsOfService />} />
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+      <Route path="/callback" element={<Callback />} />
+
 
       </Routes>
 
