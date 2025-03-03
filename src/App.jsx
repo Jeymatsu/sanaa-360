@@ -25,6 +25,8 @@ function App() {
       <Route path="/terms-of-service" element={<TermsOfService />} />
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="/callback" element={<Callback />} />
+      <Route path="/login" element={<TikTokAuth />} />
+
 
 
       </Routes>
