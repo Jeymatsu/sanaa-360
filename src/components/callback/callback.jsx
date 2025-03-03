@@ -1,7 +1,7 @@
 // src/pages/Callback.jsx
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import useAuthStore from '../stores/useAuthStore';
+import useAuthStore from '../../lib/useAuthStore';
 
 const Callback = () => {
   const navigate = useNavigate();
