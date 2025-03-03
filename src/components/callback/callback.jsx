@@ -8,6 +8,7 @@ const Callback = () => {
   const [status, setStatus] = useState('Processing...');
   const [error, setError] = useState(null);
   const [attemptCount, setAttemptCount] = useState(0);
+  const [retryDelay, setRetryDelay] = useState(2000); // Start with 2s delay, will increase with backoff
   
   const processTikTokCallback = useAuthStore(state => state.processTikTokCallback);
   const storeError = useAuthStore(state => state.error);
@@ -50,25 +51,40 @@ const Callback = () => {
             storeErrorDetails
           });
           
-          setStatus(`Authentication attempt ${attemptCount + 1} failed. Retrying...`);
-          setError(`${storeError}${storeErrorDetails ? `: ${JSON.stringify(storeErrorDetails)}` : ''}`);
+          // Network errors might need a longer delay
+          const isNetworkError = storeErrorDetails?.code === 'ERR_NETWORK';
           
-          // Retry after a short delay - keep trying indefinitely
+          // Calculate backoff delay - start with base delay, increase with each network error
+          // but cap at 10 seconds to prevent extremely long waits
+          let nextDelay = isNetworkError ? 
+            Math.min(retryDelay * 1.5, 10000) : // Increase delay for network errors
+            2000; // Reset to base delay for other errors
+          
+          console.log(`Retry scheduled in ${nextDelay/1000} seconds (${isNetworkError ? 'network error' : 'other error'})`);
+          setRetryDelay(nextDelay);
           setAttemptCount(prev => prev + 1);
+          
+          // Show more informative status for network errors
+          setStatus(`${isNetworkError ? 'Network error - server unreachable. ' : ''}Retry attempt ${attemptCount + 1} scheduled in ${nextDelay/1000}s...`);
+          
           setTimeout(() => {
             processAuth();
-          }, 2000);
+          }, nextDelay);
         }
       } catch (error) {
         console.error('Unexpected error processing callback:', error);
-        setStatus(`An error occurred. Retrying... (Attempt ${attemptCount + 1})`);
-        setError(error.message || 'Unknown error');
         
-        // Retry after a short delay - keep trying indefinitely
+        // For unexpected errors, use the same backoff strategy
+        const nextDelay = Math.min(retryDelay * 1.5, 10000);
+        console.log(`Retry scheduled in ${nextDelay/1000} seconds (unexpected error)`);
+        setRetryDelay(nextDelay);
         setAttemptCount(prev => prev + 1);
+        
+        setStatus(`Unexpected error occurred. Retry attempt ${attemptCount + 1} scheduled in ${nextDelay/1000}s...`);
+        
         setTimeout(() => {
           processAuth();
-        }, 2000);
+        }, nextDelay);
       }
     };
     
@@ -76,7 +92,7 @@ const Callback = () => {
     if (attemptCount === 0) {
       processAuth();
     }
-  }, [location, navigate, processTikTokCallback, attemptCount, storeError, storeErrorDetails]);
+  }, [location, navigate, processTikTokCallback, attemptCount, storeError, storeErrorDetails, retryDelay]);
   
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-100">
@@ -93,9 +109,30 @@ const Callback = () => {
           
           <p className="text-center text-gray-600">{status}</p>
           
-          {error && !status.includes('successful') && (
+          {/* Show connection status indicator */}
+          {storeErrorDetails?.code === 'ERR_NETWORK' && (
+            <div className="p-3 mt-2 text-sm text-orange-700 bg-orange-100 rounded-md">
+              <p className="font-bold">Network Status: Disconnected</p>
+              <p>Server is unreachable. This might be due to:</p>
+              <ul className="list-disc ml-5 mt-1">
+                <li>Server temporarily down or restarting</li>
+                <li>Internet connection issues</li>
+                <li>Backend service cold start (on Render)</li>
+              </ul>
+              <p className="mt-1">Will continue retrying until connected...</p>
+            </div>
+          )}
+          
+          {error && !status.includes('successful') && !storeErrorDetails?.code === 'ERR_NETWORK' && (
             <div className="p-3 mt-2 text-sm text-red-700 bg-red-100 rounded-md overflow-auto max-h-32">
               {error}
+            </div>
+          )}
+          
+          {/* Attempt counter display */}
+          {attemptCount > 0 && (
+            <div className="text-sm text-gray-500">
+              Retry attempts: {attemptCount}
             </div>
           )}
           

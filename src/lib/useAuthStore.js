@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import axios from 'axios';
 
+// Configure axios defaults for all requests
+axios.defaults.withCredentials = true;
+
 const useAuthStore = create(
   persist(
     (set, get) => ({
@@ -23,7 +26,9 @@ const useAuthStore = create(
       logout: async () => {
         try {
           console.log('Attempting logout...');
-          await axios.get('https://sanaa-360-backend.onrender.com/api/v1/auth/tiktok/logout');
+          await axios.get('https://sanaa-360-backend.onrender.com/api/v1/auth/tiktok/logout', 
+            { withCredentials: true } // Enable credentials for session cookies
+          );
           console.log('Logout successful');
           set({
             user: null,
@@ -48,7 +53,7 @@ const useAuthStore = create(
         }
       },
       
-      // Process TikTok callback data with enhanced logging
+      // Process TikTok callback data with enhanced logging and network error handling
       processTikTokCallback: async (code, state) => {
         console.log('Starting TikTok callback processing...');
         console.log('Code received:', code ? `${code.substring(0, 5)}...` : 'None'); // Log partial code for security
@@ -58,10 +63,16 @@ const useAuthStore = create(
         
         try {
           console.log('Making API request to process callback...');
-          // Make an API call to your backend to verify and process the code - removed timeout
-          const response = await axios.post(
-            'https://sanaa-360-backend.onrender.com/api/v1/auth/tiktok/process-callback', 
-            { code, state }
+          // Configure axios with credentials to properly send/receive cookies
+          const instance = axios.create({
+            baseURL: 'https://sanaa-360-backend.onrender.com',
+            withCredentials: true // This is critical for session cookies to work
+          });
+          
+          // IMPORTANT: Keep the payload simple - TikTok is complaining about extra parameters
+          const response = await instance.post(
+            '/api/v1/auth/tiktok/process-callback', 
+            { code }  // Only send the code, omit state to avoid parameter errors
           );
           
           console.log('API response received:', {
@@ -87,14 +98,16 @@ const useAuthStore = create(
             data: error.response?.data,
             code: error.code,
             isAxiosError: error.isAxiosError,
-            isTimeout: error.code === 'ECONNABORTED'
+            isNetworkError: error.code === 'ERR_NETWORK'
           };
           
           console.error('TikTok auth error:', errorInfo);
           
+          // For network errors specifically, we might want to handle differently
+          // but we'll still return false to let the UI handle the retry logic
           set({
             isLoading: false,
-            error: error.response?.data?.error || 'Authentication failed',
+            error: error.response?.data?.error || (error.code === 'ERR_NETWORK' ? 'Network Error - Server Unreachable' : 'Authentication failed'),
             errorDetails: errorInfo
           });
           
@@ -109,7 +122,8 @@ const useAuthStore = create(
         
         try {
           const response = await axios.get(
-            'https://sanaa-360-backend.onrender.com/api/v1/auth/tiktok/status'
+            'https://sanaa-360-backend.onrender.com/api/v1/auth/tiktok/status',
+            { withCredentials: true } // Enable credentials for session cookies
           );
           
           console.log('Auth status response:', {
@@ -142,7 +156,7 @@ const useAuthStore = create(
             data: error.response?.data,
             code: error.code,
             isAxiosError: error.isAxiosError,
-            isTimeout: error.code === 'ECONNABORTED'
+            isNetworkError: error.code === 'ERR_NETWORK'
           };
           
           console.error('Auth check error:', errorInfo);
@@ -164,7 +178,8 @@ const useAuthStore = create(
         
         try {
           const response = await axios.get(
-            'https://sanaa-360-backend.onrender.com/api/v1/auth/tiktok/refresh-token'
+            'https://sanaa-360-backend.onrender.com/api/v1/auth/tiktok/refresh-token',
+            { withCredentials: true } // Enable credentials for session cookies
           );
           
           console.log('Token refresh response:', {
@@ -190,7 +205,9 @@ const useAuthStore = create(
             message: error.message,
             status: error.response?.status,
             data: error.response?.data,
-            code: error.code
+            code: error.code,
+            isAxiosError: error.isAxiosError,
+            isNetworkError: error.code === 'ERR_NETWORK'
           };
           
           console.error('Token refresh error:', errorInfo);
