@@ -23,7 +23,7 @@ const useAuthStore = create(
       logout: async () => {
         try {
           console.log('Attempting logout...');
-          await axios.get('https://sanaa-360-backend.onrender.com/api/v1/auth/tiktok/logout');
+          await axios.get('http://localhost:5001/api/v1/auth/tiktok/logout');
           console.log('Logout successful');
           set({
             user: null,
@@ -60,7 +60,7 @@ const useAuthStore = create(
           console.log('Making API request to process callback...');
           // Make an API call to your backend to verify and process the code
           const response = await axios.post(
-            'https://sanaa-360-backend.onrender.com/api/v1/auth/tiktok/process-callback', 
+            'http://localhost:5001/api/v1/auth/tiktok/process-callback', 
             { code, state },
             { timeout: 10000 } // 10 second timeout
           );
@@ -110,7 +110,7 @@ const useAuthStore = create(
         
         try {
           const response = await axios.get(
-            'https://sanaa-360-backend.onrender.com/api/v1/auth/tiktok/status',
+            'http://localhost:5001/api/v1/auth/tiktok/status',
             { timeout: 8000 }
           );
           
@@ -166,7 +166,7 @@ const useAuthStore = create(
         
         try {
           const response = await axios.get(
-            'https://sanaa-360-backend.onrender.com/api/v1/auth/tiktok/refresh-token',
+            'http://localhost:5001/api/v1/auth/tiktok/refresh-token',
             { timeout: 8000 }
           );
           
