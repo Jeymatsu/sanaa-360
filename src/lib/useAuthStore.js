@@ -58,11 +58,10 @@ const useAuthStore = create(
         
         try {
           console.log('Making API request to process callback...');
-          // Make an API call to your backend to verify and process the code
+          // Make an API call to your backend to verify and process the code - removed timeout
           const response = await axios.post(
             'https://sanaa-360-backend.onrender.com/api/v1/auth/tiktok/process-callback', 
-            { code, state },
-            { timeout: 10000 } // 10 second timeout
+            { code, state }
           );
           
           console.log('API response received:', {
@@ -110,8 +109,7 @@ const useAuthStore = create(
         
         try {
           const response = await axios.get(
-            'https://sanaa-360-backend.onrender.com/api/v1/auth/tiktok/status',
-            { timeout: 8000 }
+            'https://sanaa-360-backend.onrender.com/api/v1/auth/tiktok/status'
           );
           
           console.log('Auth status response:', {
@@ -166,8 +164,7 @@ const useAuthStore = create(
         
         try {
           const response = await axios.get(
-            'https://sanaa-360-backend.onrender.com/api/v1/auth/tiktok/refresh-token',
-            { timeout: 8000 }
+            'https://sanaa-360-backend.onrender.com/api/v1/auth/tiktok/refresh-token'
           );
           
           console.log('Token refresh response:', {
