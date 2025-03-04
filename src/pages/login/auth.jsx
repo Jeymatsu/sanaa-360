@@ -83,8 +83,8 @@ const TikTokAuth = () => {
 
           <p className="text-xs text-gray-500 mt-5 text-center leading-relaxed">
             By connecting, you agree to our{' '}
-            <a href="/terms" className="text-red-600 hover:underline">Terms</a> and{' '}
-            <a href="/privacy" className="text-red-600 hover:underline">Privacy Policy</a>
+            <a href="/terms-of-service" className="text-red-600 hover:underline">Terms</a> and{' '}
+            <a href="/privacy-policy" className="text-red-600 hover:underline">Privacy Policy</a>
           </p>
         </div>
       ) : (
