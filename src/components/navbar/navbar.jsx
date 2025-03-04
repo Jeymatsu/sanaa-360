@@ -152,11 +152,9 @@ const Navbar = () => {
                 </div>
               </div>
             ) : (
-              // Login/Signup buttons for non-authenticated users
               <>
-                <Link to="/login" className="hover:text-red-400 transition-colors duration-200">Login</Link>
-                <Link to="/signup" className="bg-red-600 text-white px-4 py-2 rounded-full font-semibold hover:bg-red-700 transition-colors duration-200">
-                  Sign Up
+                <Link to="/login" className="bg-red-600 text-white px-4 py-2 rounded-full font-semibold hover:bg-red-700 transition-colors duration-200">
+                  Login
                 </Link>
               </>
             )}
