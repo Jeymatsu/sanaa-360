@@ -1,17 +1,32 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { Menu, X, ChevronDown, User, Settings, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import useAuthStore from '../../lib/useAuthStore';
 
 const Navbar = () => {
+  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+  
   const dropdownRef = useRef(null);
+  const userDropdownRef = useRef(null);
   const menuRef = useRef(null);
 
-  // Handle clicks outside of dropdown to close it
+  // Get auth state from store
+  const user = useAuthStore(state => state.user);
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+  const logout = useAuthStore(state => state.logout);
+
+  // Handle clicks outside of dropdowns to close them
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
+      }
+      
+      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target)) {
+        setIsUserDropdownOpen(false);
       }
       
       if (menuRef.current && !menuRef.current.contains(event.target) && isMenuOpen) {
@@ -32,6 +47,16 @@ const Navbar = () => {
   const toggleDropdown = (e) => {
     e.stopPropagation();
     setIsDropdownOpen(!isDropdownOpen);
+  };
+
+  const toggleUserDropdown = (e) => {
+    e.stopPropagation();
+    setIsUserDropdownOpen(!isUserDropdownOpen);
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
   };
 
   return (
@@ -81,12 +106,60 @@ const Navbar = () => {
             <a href="/about" className="hover:text-red-400 py-2 transition-colors duration-200">About</a>
           </div>
 
-          {/* Auth Buttons */}
+          {/* Auth Buttons or User Profile */}
           <div className="hidden md:flex items-center space-x-3">
-            <a href="/login" className="hover:text-red-400 transition-colors duration-200">Login</a>
-            <a href="/signup" className="bg-red-600 text-white px-4 py-2 rounded-full font-semibold hover:bg-red-700 transition-colors duration-200">
-              Sign Up
-            </a>
+            {isAuthenticated && user ? (
+              // User profile with dropdown
+              <div className="relative" ref={userDropdownRef}>
+                <button 
+                  className="flex items-center space-x-2 hover:text-red-400 transition-colors duration-200"
+                  onClick={toggleUserDropdown}
+                >
+                  {user.profilePicture ? (
+                    <img 
+                      src={user.profilePicture} 
+                      alt={user.displayName} 
+                      className="w-8 h-8 rounded-full object-cover border border-red-500"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-red-700 flex items-center justify-center">
+                      <User className="h-4 w-4" />
+                    </div>
+                  )}
+                  <span className="max-w-[100px] truncate">{user.displayName}</span>
+                  <ChevronDown className="h-4 w-4" />
+                </button>
+                
+                {/* User dropdown menu */}
+                <div className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-black text-white border border-red-700 ${isUserDropdownOpen ? 'block' : 'hidden'} transition-all duration-200`}>
+                  <div className="py-1">
+                    <a href="/profile" className="flex items-center px-4 py-2 hover:bg-red-900 transition-colors duration-200">
+                      <User className="h-4 w-4 mr-2" />
+                      Profile
+                    </a>
+                    <a href="/settings" className="flex items-center px-4 py-2 hover:bg-red-900 transition-colors duration-200">
+                      <Settings className="h-4 w-4 mr-2" />
+                      Settings
+                    </a>
+                    <button 
+                      onClick={handleLogout}
+                      className="w-full text-left flex items-center px-4 py-2 hover:bg-red-900 transition-colors duration-200"
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Log Out
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // Login/Signup buttons for non-authenticated users
+              <>
+                <a href="/login" className="hover:text-red-400 transition-colors duration-200">Login</a>
+                <a href="/signup" className="bg-red-600 text-white px-4 py-2 rounded-full font-semibold hover:bg-red-700 transition-colors duration-200">
+                  Sign Up
+                </a>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -137,13 +210,57 @@ const Navbar = () => {
             <a href="/merch" className="block py-2 hover:text-red-400 transition-colors duration-200">Merch</a>
             <a href="/about" className="block py-2 hover:text-red-400 transition-colors duration-200">About</a>
             
-            <div className="mt-4 flex flex-col space-y-2">
-              <a href="/login" className="text-center py-2 border border-red-700 rounded-lg hover:bg-red-900 transition-colors duration-200">
-                Login
-              </a>
-              <a href="/signup" className="text-center bg-red-600 text-white py-2 rounded-lg font-semibold hover:bg-red-700 transition-colors duration-200">
-                Sign Up
-              </a>
+            {/* Mobile Auth Buttons or User Profile */}
+            <div className="mt-4">
+              {isAuthenticated && user ? (
+                // User profile section in mobile menu
+                <div className="border-t border-red-800 pt-4">
+                  <div className="flex items-center space-x-3 mb-3">
+                    {user.profilePicture ? (
+                      <img 
+                        src={user.profilePicture} 
+                        alt={user.displayName} 
+                        className="w-10 h-10 rounded-full object-cover border border-red-500"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-red-700 flex items-center justify-center">
+                        <User className="h-5 w-5" />
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-medium">{user.displayName}</p>
+                      <p className="text-xs text-gray-400 truncate max-w-[200px]">@{user.username || user.id}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col space-y-2">
+                    <a href="/profile" className="flex items-center py-2 hover:text-red-400 transition-colors duration-200">
+                      <User className="h-4 w-4 mr-2" />
+                      Profile
+                    </a>
+                    <a href="/settings" className="flex items-center py-2 hover:text-red-400 transition-colors duration-200">
+                      <Settings className="h-4 w-4 mr-2" />
+                      Settings
+                    </a>
+                    <button 
+                      onClick={handleLogout}
+                      className="flex items-center py-2 text-left hover:text-red-400 transition-colors duration-200"
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Log Out
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                // Login/Signup buttons for non-authenticated users
+                <div className="flex flex-col space-y-2">
+                  <a href="/login" className="text-center py-2 border border-red-700 rounded-lg hover:bg-red-900 transition-colors duration-200">
+                    Login
+                  </a>
+                  <a href="/signup" className="text-center bg-red-600 text-white py-2 rounded-lg font-semibold hover:bg-red-700 transition-colors duration-200">
+                    Sign Up
+                  </a>
+                </div>
+              )}
             </div>
           </div>
         )}
