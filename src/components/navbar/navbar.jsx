@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Menu, X, ChevronDown, User, Settings, LogOut } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../../lib/useAuthStore';
 
 const Navbar = () => {
@@ -66,16 +66,16 @@ const Navbar = () => {
         <div className="flex justify-between items-center">
           {/* Logo */}
           <div className="flex items-center">
-            <a href="/" className="text-2xl font-bold flex items-center">
+            <Link to="/" className="text-2xl font-bold flex items-center">
               <span className="mr-2 text-red-500">SANAA</span>
               <span className="text-white">360</span>
               <span className="ml-2 text-xs bg-red-600 text-white px-2 py-0.5 rounded-full">BETA</span>
-            </a>
+            </Link>
           </div>
 
           {/* Desktop Menu Items */}
           <div className="hidden md:flex space-x-6">
-            <a href="/" className="hover:text-red-400 py-2 transition-colors duration-200">Home</a>
+            <Link to="/" className="hover:text-red-400 py-2 transition-colors duration-200">Home</Link>
             <div className="relative group" ref={dropdownRef}>
               <button 
                 className="flex items-center hover:text-red-400 py-2 transition-colors duration-200"
@@ -86,24 +86,24 @@ const Navbar = () => {
               </button>
               <div className={`absolute left-0 mt-1 w-48 rounded-md shadow-lg bg-black text-white border border-red-700 ${isDropdownOpen ? 'block' : 'hidden'} md:group-hover:block transition-all duration-200`}>
                 <div className="py-1">
-                  <a href="/challenges/dance" className="block px-4 py-2 hover:bg-red-900 transition-colors duration-200">
+                  <Link to="/challenges/dance" className="block px-4 py-2 hover:bg-red-900 transition-colors duration-200">
                     Dance Challenges
-                  </a>
-                  <a href="/challenges/comedy" className="block px-4 py-2 hover:bg-red-900 transition-colors duration-200">
+                  </Link>
+                  <Link to="/challenges/comedy" className="block px-4 py-2 hover:bg-red-900 transition-colors duration-200">
                     Comedy Challenges
-                  </a>
-                  <a href="/challenges/music" className="block px-4 py-2 hover:bg-red-900 transition-colors duration-200">
+                  </Link>
+                  <Link to="/challenges/music" className="block px-4 py-2 hover:bg-red-900 transition-colors duration-200">
                     Music Challenges
-                  </a>
-                  <a href="/challenges/all" className="block px-4 py-2 hover:bg-red-900 transition-colors duration-200">
+                  </Link>
+                  <Link to="/challenges/all" className="block px-4 py-2 hover:bg-red-900 transition-colors duration-200">
                     All Challenges
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
-            <a href="/leaderboard" className="hover:text-red-400 py-2 transition-colors duration-200">Leaderboard</a>
-            <a href="/merch" className="hover:text-red-400 py-2 transition-colors duration-200">Merch</a>
-            <a href="/about" className="hover:text-red-400 py-2 transition-colors duration-200">About</a>
+            <Link to="/leaderboard" className="hover:text-red-400 py-2 transition-colors duration-200">Leaderboard</Link>
+            <Link to="/merch" className="hover:text-red-400 py-2 transition-colors duration-200">Merch</Link>
+            <Link to="/about" className="hover:text-red-400 py-2 transition-colors duration-200">About</Link>
           </div>
 
           {/* Auth Buttons or User Profile */}
@@ -133,14 +133,14 @@ const Navbar = () => {
                 {/* User dropdown menu */}
                 <div className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-black text-white border border-red-700 ${isUserDropdownOpen ? 'block' : 'hidden'} transition-all duration-200`}>
                   <div className="py-1">
-                    <a href="/profile" className="flex items-center px-4 py-2 hover:bg-red-900 transition-colors duration-200">
+                    <Link to="/profile" className="flex items-center px-4 py-2 hover:bg-red-900 transition-colors duration-200">
                       <User className="h-4 w-4 mr-2" />
                       Profile
-                    </a>
-                    <a href="/settings" className="flex items-center px-4 py-2 hover:bg-red-900 transition-colors duration-200">
+                    </Link>
+                    <Link to="/settings" className="flex items-center px-4 py-2 hover:bg-red-900 transition-colors duration-200">
                       <Settings className="h-4 w-4 mr-2" />
                       Settings
-                    </a>
+                    </Link>
                     <button 
                       onClick={handleLogout}
                       className="w-full text-left flex items-center px-4 py-2 hover:bg-red-900 transition-colors duration-200"
@@ -154,10 +154,10 @@ const Navbar = () => {
             ) : (
               // Login/Signup buttons for non-authenticated users
               <>
-                <a href="/login" className="hover:text-red-400 transition-colors duration-200">Login</a>
-                <a href="/signup" className="bg-red-600 text-white px-4 py-2 rounded-full font-semibold hover:bg-red-700 transition-colors duration-200">
+                <Link to="/login" className="hover:text-red-400 transition-colors duration-200">Login</Link>
+                <Link to="/signup" className="bg-red-600 text-white px-4 py-2 rounded-full font-semibold hover:bg-red-700 transition-colors duration-200">
                   Sign Up
-                </a>
+                </Link>
               </>
             )}
           </div>
@@ -180,7 +180,7 @@ const Navbar = () => {
         {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="md:hidden mt-3 pb-3 border-t border-red-800" ref={menuRef}>
-            <a href="/" className="block py-2 hover:text-red-400 transition-colors duration-200">Home</a>
+            <Link to="/" className="block py-2 hover:text-red-400 transition-colors duration-200">Home</Link>
             <button 
               className="flex items-center justify-between w-full py-2 hover:text-red-400 transition-colors duration-200"
               onClick={toggleDropdown}
@@ -191,24 +191,24 @@ const Navbar = () => {
             
             {isDropdownOpen && (
               <div className="pl-4 mt-1 mb-2 border-l-2 border-red-700 bg-black bg-opacity-70">
-                <a href="/challenges/dance" className="block py-2 hover:text-red-400 transition-colors duration-200">
+                <Link to="/challenges/dance" className="block py-2 hover:text-red-400 transition-colors duration-200">
                   Dance Challenges
-                </a>
-                <a href="/challenges/comedy" className="block py-2 hover:text-red-400 transition-colors duration-200">
+                </Link>
+                <Link to="/challenges/comedy" className="block py-2 hover:text-red-400 transition-colors duration-200">
                   Comedy Challenges
-                </a>
-                <a href="/challenges/music" className="block py-2 hover:text-red-400 transition-colors duration-200">
+                </Link>
+                <Link to="/challenges/music" className="block py-2 hover:text-red-400 transition-colors duration-200">
                   Music Challenges
-                </a>
-                <a href="/challenges/all" className="block py-2 hover:text-red-400 transition-colors duration-200">
+                </Link>
+                <Link to="/challenges/all" className="block py-2 hover:text-red-400 transition-colors duration-200">
                   All Challenges
-                </a>
+                </Link>
               </div>
             )}
             
-            <a href="/leaderboard" className="block py-2 hover:text-red-400 transition-colors duration-200">Leaderboard</a>
-            <a href="/merch" className="block py-2 hover:text-red-400 transition-colors duration-200">Merch</a>
-            <a href="/about" className="block py-2 hover:text-red-400 transition-colors duration-200">About</a>
+            <Link to="/leaderboard" className="block py-2 hover:text-red-400 transition-colors duration-200">Leaderboard</Link>
+            <Link to="/merch" className="block py-2 hover:text-red-400 transition-colors duration-200">Merch</Link>
+            <Link to="/about" className="block py-2 hover:text-red-400 transition-colors duration-200">About</Link>
             
             {/* Mobile Auth Buttons or User Profile */}
             <div className="mt-4">
@@ -233,14 +233,14 @@ const Navbar = () => {
                     </div>
                   </div>
                   <div className="flex flex-col space-y-2">
-                    <a href="/profile" className="flex items-center py-2 hover:text-red-400 transition-colors duration-200">
+                    <Link to="/profile" className="flex items-center py-2 hover:text-red-400 transition-colors duration-200">
                       <User className="h-4 w-4 mr-2" />
                       Profile
-                    </a>
-                    <a href="/settings" className="flex items-center py-2 hover:text-red-400 transition-colors duration-200">
+                    </Link>
+                    <Link to="/settings" className="flex items-center py-2 hover:text-red-400 transition-colors duration-200">
                       <Settings className="h-4 w-4 mr-2" />
                       Settings
-                    </a>
+                    </Link>
                     <button 
                       onClick={handleLogout}
                       className="flex items-center py-2 text-left hover:text-red-400 transition-colors duration-200"
@@ -253,12 +253,12 @@ const Navbar = () => {
               ) : (
                 // Login/Signup buttons for non-authenticated users
                 <div className="flex flex-col space-y-2">
-                  <a href="/login" className="text-center py-2 border border-red-700 rounded-lg hover:bg-red-900 transition-colors duration-200">
+                  <Link to="/login" className="text-center py-2 border border-red-700 rounded-lg hover:bg-red-900 transition-colors duration-200">
                     Login
-                  </a>
-                  <a href="/signup" className="text-center bg-red-600 text-white py-2 rounded-lg font-semibold hover:bg-red-700 transition-colors duration-200">
+                  </Link>
+                  <Link to="/signup" className="text-center bg-red-600 text-white py-2 rounded-lg font-semibold hover:bg-red-700 transition-colors duration-200">
                     Sign Up
-                  </a>
+                  </Link>
                 </div>
               )}
             </div>

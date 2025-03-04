@@ -19,8 +19,6 @@ const Dashboard = () => {
        <Hero/>
        <ProcessSteps/>
        <ChallengesSection/>
-       <TikTokAuth/>
-       
        </DefaultLayout>
   );
 };
