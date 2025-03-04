@@ -80,17 +80,12 @@ const useAuthStore = create(
         try {
           console.log('Making API request to process callback...');
           
-          // Configure axios with credentials to properly send/receive cookies
-          const instance = axios.create({
-            baseURL: API_BASE_URL.split('/auth')[0], // Get base URL without '/auth'
-            withCredentials: true
-          });
-          
+        
           // IMPORTANT: We're passing the code exactly as received - no modifications
-          // This is critical because the code contains special characters
-          const response = await instance.post(
-            '/api/v1/auth/tiktok/process-callback', 
-            { code }  // Send the raw code without any processing
+          const response = await axios.post(
+            'https://sanaa-360-backend.onrender.com/api/v1/auth/tiktok/process-callback',
+            { code },  // Send the raw code without any processing
+            { withCredentials: true }
           );
           
           console.log('API response received:', {
