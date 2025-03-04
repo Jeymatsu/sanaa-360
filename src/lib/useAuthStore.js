@@ -16,7 +16,7 @@ const useAuthStore = create(
       isLoading: false,
       error: null,
       errorDetails: null,
-      tokenExpiry: null, // Add token expiry tracking
+      tokenExpiry: null,
       
       // Set the user data after successful authentication
       setUser: (userData) => set({
@@ -44,6 +44,7 @@ const useAuthStore = create(
             errorDetails: null,
             tokenExpiry: null
           });
+          return true;
         } catch (error) {
           console.error('Logout error:', {
             message: error.message,
@@ -58,36 +59,45 @@ const useAuthStore = create(
               data: error.response?.data
             }
           });
+          return false;
         }
       },
       
       // Process TikTok callback data with enhanced error handling
       processTikTokCallback: async (code, state) => {
         console.log('Starting TikTok callback processing...');
-        console.log('Code received:', code ? `${code.substring(0, 5)}...` : 'None');
+        console.log('Code received (first/last 5 chars):', 
+          code ? `${code.substring(0, 5)}...${code.substring(code.length - 5)}` : 'None');
+        console.log('Code length:', code ? code.length : 0);
+        
+        // Check for special characters that may cause issues
+        const hasSpecialChars = code ? /[*!]/.test(code) : false;
+        console.log('Code contains special chars:', hasSpecialChars);
         console.log('State received:', state);
         
         set({ isLoading: true });
         
         try {
           console.log('Making API request to process callback...');
+          
           // Configure axios with credentials to properly send/receive cookies
           const instance = axios.create({
             baseURL: API_BASE_URL.split('/auth')[0], // Get base URL without '/auth'
             withCredentials: true
           });
           
-          // Send only the code to match our updated backend
+          // IMPORTANT: We're passing the code exactly as received - no modifications
+          // This is critical because the code contains special characters
           const response = await instance.post(
             '/api/v1/auth/tiktok/process-callback', 
-            { code }
+            { code }  // Send the raw code without any processing
           );
           
           console.log('API response received:', {
             status: response.status,
             hasUser: !!response.data.user,
             userId: response.data.user?.id,
-            scope: response.data.user?.scope // Log the scope we now track
+            scope: response.data.user?.scope
           });
           
           // Store token expiry if available
@@ -118,8 +128,10 @@ const useAuthStore = create(
           
           console.error('TikTok auth error:', errorInfo);
           
-          // Handle specific errors from the new API
-          const errorMessage = error.response?.data?.error_description || 
+          // Extract the most relevant error message
+          const errorMessage = error.response?.data?.errorMessage || 
+                              error.response?.data?.details ||
+                              error.response?.data?.error_description || 
                               error.response?.data?.error ||
                               (error.code === 'ERR_NETWORK' ? 'Network Error - Server Unreachable' : 'Authentication failed');
           
@@ -149,7 +161,7 @@ const useAuthStore = create(
           if (refreshed) {
             console.log('Token refreshed successfully');
             set({ isLoading: false });
-            return;
+            return true;
           }
         }
         
@@ -163,19 +175,26 @@ const useAuthStore = create(
             status: response.status,
             authenticated: response.data.authenticated,
             hasUser: !!response.data.user,
-            scope: response.data.user?.scope
+            scope: response.data.user?.scope,
+            tokenExpired: response.data.tokenExpired
           });
           
           if (response.data.authenticated) {
-            set({
-              user: response.data.user,
-              isAuthenticated: true,
-              isLoading: false,
-              error: null,
-              errorDetails: null,
-              // Update token expiry if provided
-              tokenExpiry: response.data.tokenExpiry ? new Date(response.data.tokenExpiry) : get().tokenExpiry
-            });
+            // If token is reported as expired, refresh it
+            if (response.data.tokenExpired) {
+              console.log('Server reports token expired, refreshing...');
+              await get().refreshToken();
+            } else {
+              set({
+                user: response.data.user,
+                isAuthenticated: true,
+                isLoading: false,
+                error: null,
+                errorDetails: null,
+                tokenExpiry: response.data.tokenExpiry ? new Date(response.data.tokenExpiry) : get().tokenExpiry
+              });
+            }
+            return true;
           } else {
             set({
               user: null,
@@ -185,6 +204,7 @@ const useAuthStore = create(
               errorDetails: null,
               tokenExpiry: null
             });
+            return false;
           }
         } catch (error) {
           const errorInfo = {
@@ -215,10 +235,11 @@ const useAuthStore = create(
               errorDetails: errorInfo
             });
           }
+          return false;
         }
       },
       
-      // Improved token refresh function that handles the updated API response format
+      // Improved token refresh function with better error handling
       refreshToken: async () => {
         console.log('Attempting to refresh token...');
         set({ isLoading: true });
@@ -291,7 +312,7 @@ const useAuthStore = create(
         }
       },
 
-      // Add a function to check if the token is expiring soon and refresh if needed
+      // Check if the token is expiring soon and refresh if needed
       checkAndRefreshTokenIfNeeded: async () => {
         const { tokenExpiry } = get();
         if (!tokenExpiry) return false;
@@ -314,7 +335,7 @@ const useAuthStore = create(
       partialize: (state) => ({ 
         user: state.user, 
         isAuthenticated: state.isAuthenticated,
-        tokenExpiry: state.tokenExpiry // Also persist token expiry time
+        tokenExpiry: state.tokenExpiry
       }),
     }
   )
