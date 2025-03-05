@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import useAuthStore from '../store/useAuthStore'; // Adjust path as needed
+import useAuthStore from '../../lib/useAuthStore';
 
 // API endpoint for TikTok content posting
 const API_URL = 'https://sanaa-360-backend.onrender.com/api/v1/content';
