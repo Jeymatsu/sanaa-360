@@ -10,7 +10,6 @@ const TikTokUploader = () => {
   const { 
     user, 
     isAuthenticated, 
-    checkAuthStatus, 
     checkAndRefreshTokenIfNeeded,
     error: authError
   } = useAuthStore();
@@ -27,15 +26,6 @@ const TikTokUploader = () => {
   const [uploadStatus, setUploadStatus] = useState(null);
   const [statusCheckInterval, setStatusCheckInterval] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
-
-  // Check auth status when component mounts
-  useEffect(() => {
-    const verifyAuth = async () => {
-      await checkAuthStatus();
-    };
-    
-    verifyAuth();
-  }, [checkAuthStatus]);
 
   // Clean up interval on component unmount
   useEffect(() => {
