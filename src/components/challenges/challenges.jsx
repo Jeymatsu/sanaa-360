@@ -455,7 +455,9 @@ const ChallengeExplorer = () => {
   };
 
   const handleSelectChallenge = (id) => {
-    navigate(`/challenges/${id}`);
+    // Encode the hash character in the ID
+    const encodedId = id.replace('#', '%23');
+    navigate(`/challenges/${encodedId}`);
   };
 
   const toggleActiveFilter = () => {
