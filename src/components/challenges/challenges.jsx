@@ -395,7 +395,7 @@ const ChallengeExplorer = () => {
           queryParams.append('category', activeCategory);
         }
         
-        const response = await fetch(`http://localhost:5001/api/v1/challenges/challenges?${queryParams.toString()}`);
+        const response = await fetch(`https://sanaa-360-backend.onrender.com/api/v1/challenges/challenges?${queryParams.toString()}`);
         if (!response.ok) {
           throw new Error('Failed to fetch challenges');
         }

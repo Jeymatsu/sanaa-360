@@ -22,22 +22,14 @@ function App() {
   return (
     <Router>
       <Routes>
-
       <Route path="/" element={<Dashboard />} />
       <Route path="/terms-of-service" element={<TermsOfService />} />
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="/callback" element={<Callback />} />
       <Route path="/login" element={<TikTokAuth />} />
-
       <Route path="/challenges/:challengeId" element={<ChallengeDetails />} />
       <Route path="/content" element={<TikTokUploader />} />
-
-
-
-
-
       </Routes>
-
     </Router>
    
      
