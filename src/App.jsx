@@ -15,6 +15,7 @@ import PrivacyPolicy from './pages/legal/privacyPolicy';
 import Callback from './components/callback/callback';
 import ChallengeDetails from './components/challenges/challengeDetails';
 import TikTokUploader from './components/content/posting';
+import HowItWorks from './components/resources/howItWorks';
 
 function App() {
   const [count, setCount] = useState(0)
@@ -29,9 +30,13 @@ function App() {
       <Route path="/login" element={<TikTokAuth />} />
       <Route path="/challenges/:challengeId" element={<ChallengeDetails />} />
       <Route path="/content" element={<TikTokUploader />} />
+      <Route path="/how-it-works" element={<HowItWorks />} />
+
+
       </Routes>
     </Router>
-   
+
+
      
   )
 }
