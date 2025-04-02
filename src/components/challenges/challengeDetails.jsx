@@ -38,7 +38,7 @@ const ChallengeDetails = () => {
         challengeId = decodeURIComponent(challengeId);
         
         // Make the API request
-        const response = await fetch(`http://localhost:5001/api/v1/challenges/challenges/${challengeId}`);
+        const response = await fetch(`https://sanaa-360-backend.onrender.com/api/v1/challenges/challenges/${challengeId}`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch challenge');
