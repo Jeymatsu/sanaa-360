@@ -4,7 +4,6 @@ import DefaultLayout from '../../pages/default/default';
 import useAuthStore from '../../lib/useAuthStore';
 import TikTokSubmissionModal from '../submission/submissionModal';
 
-
 const ChallengeDetails = () => {
   const [challenge, setChallenge] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -12,33 +11,41 @@ const ChallengeDetails = () => {
   const [activeTab, setActiveTab] = useState('details');
   const [isModalOpen, setIsModalOpen] = useState(false);
   
-  // Get auth state from Zustand store
   const { 
     isAuthenticated, 
     user, 
     checkAuthStatus, 
-    checkAndRefreshTokenIfNeeded 
+    checkAndRefreshTokenIfNeeded,
+    checkSessionIntegrity
   } = useAuthStore();
 
   useEffect(() => {
-    // Check authentication status when component mounts
-    const checkAuth = async () => {
-      await checkAuthStatus();
+    const initializeComponent = async () => {
+      try {
+        console.log('ChallengeDetails initializing with auth state:', { 
+          isAuthenticated, 
+          hasUser: !!user
+        });
+        
+        await checkSessionIntegrity();
+        await checkAndRefreshTokenIfNeeded();
+        await checkAuthStatus();
+        
+        console.log('Auth check complete, authenticated:', isAuthenticated);
+      } catch (error) {
+        console.error("Auth initialization failed:", error);
+      }
     };
     
-    checkAuth();
-    
-    // Fetch challenge data
     const fetchChallenge = async () => {
       try {
-        // Get the challenge ID from the URL parameters
         let challengeId = window.location.pathname.split('/').pop();
-        
-        // Decode the URL-encoded ID
         challengeId = decodeURIComponent(challengeId);
         
-        // Make the API request
-        const response = await fetch(`https://sanaa-360-backend.onrender.com/api/v1/challenges/challenges/${challengeId}`);
+        const response = await fetch(
+          `https://sanaa-360-backend.onrender.com/api/v1/challenges/challenges/${challengeId}`,
+          { credentials: 'include' }
+        );
         
         if (!response.ok) {
           throw new Error('Failed to fetch challenge');
@@ -50,10 +57,8 @@ const ChallengeDetails = () => {
           throw new Error('No challenge data returned from API');
         }
         
-        // Get the first item from the data array
         const challengeData = responseData.data[0];
         
-        // Parse rules if it's a string representation of an array
         if (typeof challengeData.rules === 'string') {
           try {
             challengeData.rules = JSON.parse(challengeData.rules);
@@ -63,7 +68,6 @@ const ChallengeDetails = () => {
           }
         }
         
-        // Calculate days left if not provided by API
         if (!challengeData.daysLeft && challengeData.endDate) {
           const now = new Date();
           const endDate = challengeData.endDate._seconds ? 
@@ -74,7 +78,6 @@ const ChallengeDetails = () => {
           challengeData.daysLeft = daysLeft > 0 ? daysLeft : 0;
         }
         
-        // Set expired flag if not provided
         if (challengeData.daysLeft === 0 && challengeData.isExpired === undefined) {
           challengeData.isExpired = true;
         }
@@ -87,35 +90,27 @@ const ChallengeDetails = () => {
       }
     };
 
-    fetchChallenge();
-  }, [checkAuthStatus]);
+    initializeComponent().then(fetchChallenge);
+  }, []);
 
-  // Format date function
   const formatDate = (dateObj) => {
-    // Handle different date formats
     let date;
     
-    // Handle Firestore timestamp format {_seconds: number, _nanoseconds: number}
     if (dateObj && dateObj._seconds) {
       date = new Date(dateObj._seconds * 1000);
     }
-    // Case 1: It's a Firestore timestamp (has toDate method)
     else if (dateObj && typeof dateObj.toDate === 'function') {
       date = dateObj.toDate();
     }
-    // Case 2: It's a Date object already
     else if (dateObj instanceof Date) {
       date = dateObj;
     }
-    // Case 3: It's a string (ISO format)
     else if (typeof dateObj === 'string') {
       date = new Date(dateObj);
     }
-    // Case 4: It's a number (timestamp)
     else if (typeof dateObj === 'number') {
       date = new Date(dateObj);
     }
-    // Case 5: Something else or undefined
     else {
       return 'Invalid date';
     }
@@ -127,15 +122,11 @@ const ChallengeDetails = () => {
     }).format(date);
   };
 
-  // Handle submit button click
   const handleSubmitClick = async () => {
     if (isAuthenticated) {
-      // Refresh token if needed before opening modal
       await checkAndRefreshTokenIfNeeded();
-      // Open the submission modal
       setIsModalOpen(true);
     } else {
-      // Redirect to TikTok login
       window.location.href = 'https://sanaa-360-backend.onrender.com/api/v1/auth/tiktok/login';
     }
   };
@@ -163,7 +154,6 @@ const ChallengeDetails = () => {
     );
   }
 
-  // Use the actual challenge data from the API
   if (!challenge) {
     return (
       <DefaultLayout>
@@ -199,7 +189,6 @@ const ChallengeDetails = () => {
     judging
   } = challenge;
 
-  // Challenge status for badge display
   const getStatusBadge = () => {
     if (isExpired) {
       return (
@@ -228,7 +217,6 @@ const ChallengeDetails = () => {
   return (
     <DefaultLayout>
       <div className="min-h-screen bg-gray-50">
-        {/* Hero Section with Challenge Banner */}
         <div 
           className="relative h-100 bg-cover bg-center"
           style={{ backgroundImage: `url(${image})` }}
@@ -252,7 +240,6 @@ const ChallengeDetails = () => {
         </div>
 
         <div className="max-w-4xl mx-auto px-4 py-6">
-          {/* Key Stats Bar */}
           <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
             <div className="grid grid-cols-3 gap-4">
               <div className="text-center">
@@ -270,7 +257,6 @@ const ChallengeDetails = () => {
             </div>
           </div>
 
-          {/* Prize & Date Overview */}
           <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center gap-3">
@@ -292,7 +278,6 @@ const ChallengeDetails = () => {
             </div>
           </div>
 
-          {/* CTA Button */}
           {!isExpired && (
             <div className="bg-white rounded-lg shadow-sm p-4 mb-6 text-center">
               <button 
@@ -306,7 +291,6 @@ const ChallengeDetails = () => {
             </div>
           )}
 
-          {/* Content Tabs */}
           <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
             <div className="flex border-b">
               <button 
@@ -390,7 +374,6 @@ const ChallengeDetails = () => {
             </div>
           </div>
 
-          {/* Quick Actions Footer */}
           <div className="flex justify-between mb-6">
             <button className="flex items-center gap-1 text-gray-600 text-sm">
               <Share2 size={16} />
@@ -405,7 +388,6 @@ const ChallengeDetails = () => {
         </div>
       </div>
 
-      {/* TikTok Submission Modal */}
       {isModalOpen && (
         <TikTokSubmissionModal
           isOpen={isModalOpen}

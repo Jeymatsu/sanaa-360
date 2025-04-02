@@ -2,10 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import axios from 'axios';
 
-// Configure axios defaults for all requests
 axios.defaults.withCredentials = true;
 
-// Define base URL as a constant for easier maintenance
 const API_BASE_URL = 'https://sanaa-360-backend.onrender.com/api/v1/auth';
 
 const useAuthStore = create(
@@ -18,7 +16,6 @@ const useAuthStore = create(
       errorDetails: null,
       tokenExpiry: null,
       
-      // Set the user data after successful authentication
       setUser: (userData) => set({
         user: userData,
         isAuthenticated: true,
@@ -26,12 +23,10 @@ const useAuthStore = create(
         errorDetails: null
       }),
       
-      // Clear user data on logout
       logout: async () => {
         try {
           console.log('Attempting logout...');
           
-          // Use the revoke-access endpoint instead of simple logout
           await axios.post(`${API_BASE_URL}/tiktok/revoke-access`, {}, 
             { withCredentials: true }
           );
@@ -63,14 +58,12 @@ const useAuthStore = create(
         }
       },
       
-      // Process TikTok callback data with enhanced error handling
       processTikTokCallback: async (code, state) => {
         console.log('Starting TikTok callback processing...');
         console.log('Code received (first/last 5 chars):', 
           code ? `${code.substring(0, 5)}...${code.substring(code.length - 5)}` : 'None');
         console.log('Code length:', code ? code.length : 0);
         
-        // Check for special characters that may cause issues
         const hasSpecialChars = code ? /[*!]/.test(code) : false;
         console.log('Code contains special chars:', hasSpecialChars);
         console.log('State received:', state);
@@ -80,11 +73,9 @@ const useAuthStore = create(
         try {
           console.log('Making API request to process callback...');
           
-        
-          // IMPORTANT: We're passing the code exactly as received - no modifications
           const response = await axios.post(
             'https://sanaa-360-backend.onrender.com/api/v1/auth/tiktok/process-callback',
-            { code },  // Send the raw code without any processing
+            { code },
             { withCredentials: true }
           );
           
@@ -95,12 +86,10 @@ const useAuthStore = create(
             scope: response.data.user?.scope
           });
           
-          // Store token expiry if available
           const tokenExpiry = response.data.tokenExpiry 
             ? new Date(response.data.tokenExpiry) 
             : null;
           
-          // Set user in store with additional data
           set({
             user: response.data.user,
             isAuthenticated: true,
@@ -123,7 +112,6 @@ const useAuthStore = create(
           
           console.error('TikTok auth error:', errorInfo);
           
-          // Extract the most relevant error message
           const errorMessage = error.response?.data?.errorMessage || 
                               error.response?.data?.details ||
                               error.response?.data?.error_description || 
@@ -140,25 +128,56 @@ const useAuthStore = create(
         }
       },
       
-      // Check authentication status with token validation
+      checkSessionIntegrity: async () => {
+        console.log('Checking session integrity...');
+        
+        try {
+          const { isAuthenticated } = get();
+          
+          const response = await axios.get(
+            `${API_BASE_URL.replace('/auth', '')}/session-check`, 
+            { withCredentials: true }
+          );
+          
+          const serverHasSession = response.data.hasUserId;
+          
+          if (isAuthenticated && !serverHasSession) {
+            console.log('Session integrity issue: client authenticated but server session missing');
+            
+            const refreshed = await get().refreshToken();
+            if (!refreshed) {
+              set({
+                user: null,
+                isAuthenticated: false,
+                error: 'Session expired on server',
+                tokenExpiry: null
+              });
+              return false;
+            }
+          }
+          
+          return true;
+        } catch (error) {
+          console.error('Session integrity check error:', error);
+          return get().isAuthenticated;
+        }
+      },
+      
       checkAuthStatus: async () => {
         console.log('Checking authentication status...');
-        set({ isLoading: true });
         
-        // Check if token needs refresh based on local expiry time
-        const { tokenExpiry } = get();
-        const now = new Date();
-        const needsRefresh = tokenExpiry && now >= new Date(tokenExpiry);
+        const { tokenExpiry, isAuthenticated } = get();
         
-        if (needsRefresh) {
-          console.log('Token appears expired, attempting refresh first...');
-          const refreshed = await get().refreshToken();
-          if (refreshed) {
-            console.log('Token refreshed successfully');
-            set({ isLoading: false });
+        if (isAuthenticated && tokenExpiry) {
+          const now = new Date();
+          const expiryTime = new Date(tokenExpiry);
+          if (now < expiryTime) {
+            console.log('Using cached authentication state - token still valid');
             return true;
           }
         }
+        
+        set({ isLoading: true });
         
         try {
           const response = await axios.get(
@@ -169,26 +188,18 @@ const useAuthStore = create(
           console.log('Auth status response:', {
             status: response.status,
             authenticated: response.data.authenticated,
-            hasUser: !!response.data.user,
-            scope: response.data.user?.scope,
-            tokenExpired: response.data.tokenExpired
+            hasUser: !!response.data.user
           });
           
           if (response.data.authenticated) {
-            // If token is reported as expired, refresh it
-            if (response.data.tokenExpired) {
-              console.log('Server reports token expired, refreshing...');
-              await get().refreshToken();
-            } else {
-              set({
-                user: response.data.user,
-                isAuthenticated: true,
-                isLoading: false,
-                error: null,
-                errorDetails: null,
-                tokenExpiry: response.data.tokenExpiry ? new Date(response.data.tokenExpiry) : get().tokenExpiry
-              });
-            }
+            set({
+              user: response.data.user,
+              isAuthenticated: true,
+              isLoading: false,
+              error: null,
+              errorDetails: null,
+              tokenExpiry: response.data.tokenExpiry ? new Date(response.data.tokenExpiry) : get().tokenExpiry
+            });
             return true;
           } else {
             set({
@@ -202,39 +213,21 @@ const useAuthStore = create(
             return false;
           }
         } catch (error) {
-          const errorInfo = {
-            message: error.message,
-            status: error.response?.status,
-            data: error.response?.data,
-            code: error.code,
-            isAxiosError: error.isAxiosError,
-            isNetworkError: error.code === 'ERR_NETWORK'
-          };
-          
-          console.error('Auth check error:', errorInfo);
-          
-          // If unauthorized, clear user state
           if (error.response?.status === 401) {
             set({
               user: null,
               isAuthenticated: false,
               isLoading: false,
               error: 'Session expired',
-              errorDetails: errorInfo,
               tokenExpiry: null
             });
           } else {
-            set({
-              isLoading: false,
-              error: 'Failed to check authentication status',
-              errorDetails: errorInfo
-            });
+            set({ isLoading: false });
           }
           return false;
         }
       },
       
-      // Improved token refresh function with better error handling
       refreshToken: async () => {
         console.log('Attempting to refresh token...');
         set({ isLoading: true });
@@ -247,16 +240,15 @@ const useAuthStore = create(
           
           console.log('Token refresh response:', {
             status: response.status,
-            success: response.data.success,
-            scope: response.data.user?.scope
+            success: response.data.success
           });
           
           if (response.data.success) {
-            // Calculate token expiry from expires_in if available
             let tokenExpiry = null;
             if (response.data.expiresIn) {
               tokenExpiry = new Date();
               tokenExpiry.setSeconds(tokenExpiry.getSeconds() + response.data.expiresIn);
+              tokenExpiry.setMinutes(tokenExpiry.getMinutes() - 5);
             } else if (response.data.tokenExpiry) {
               tokenExpiry = new Date(response.data.tokenExpiry);
             }
@@ -272,42 +264,28 @@ const useAuthStore = create(
             return true;
           } else {
             console.warn('Token refresh unsuccessful');
+            set({ isLoading: false });
             return false;
           }
         } catch (error) {
-          const errorInfo = {
-            message: error.message,
-            status: error.response?.status,
-            data: error.response?.data,
-            code: error.code,
-            isAxiosError: error.isAxiosError,
-            isNetworkError: error.code === 'ERR_NETWORK'
-          };
+          console.error('Token refresh error:', error);
           
-          console.error('Token refresh error:', errorInfo);
-          
-          // Check if we need to redirect for re-authentication
           if (error.response?.data?.reauth) {
             set({
               user: null,
               isAuthenticated: false,
               isLoading: false,
               error: 'Authentication required',
-              errorDetails: errorInfo,
               tokenExpiry: null
             });
           } else {
-            set({
-              isLoading: false,
-              error: 'Failed to refresh authentication token',
-              errorDetails: errorInfo
-            });
+            set({ isLoading: false });
           }
+          
           return false;
         }
       },
 
-      // Check if the token is expiring soon and refresh if needed
       checkAndRefreshTokenIfNeeded: async () => {
         const { tokenExpiry } = get();
         if (!tokenExpiry) return false;
@@ -315,18 +293,17 @@ const useAuthStore = create(
         const now = new Date();
         const expiryTime = new Date(tokenExpiry);
         
-        // If token expires in less than 15 minutes, refresh it
         const fifteenMinutesInMs = 15 * 60 * 1000;
         if ((expiryTime - now) < fifteenMinutesInMs) {
           console.log('Token expires soon, refreshing...');
           return await get().refreshToken();
         }
         
-        return true; // Token is still valid
+        return true;
       }
     }),
     {
-      name: 'auth-storage', // name of the item in localStorage
+      name: 'auth-storage',
       partialize: (state) => ({ 
         user: state.user, 
         isAuthenticated: state.isAuthenticated,
